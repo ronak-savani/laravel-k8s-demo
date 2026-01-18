@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+  namespace: laravel-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: laravel-app
+  template:
+    metadata:
+      labels:
+        app: laravel-app
+    spec:
+      containers:
+        - name: laravel-app
+          image: your-docker-username/laravel-app:v1 # Replace with your actual image
+          imagePullPolicy: Always
+          workingDir: /var/www/html/beta-qlassroom.qntmnet.com
+          volumeMounts:
+            - name: laravel-env
+              mountPath: /var/www/html/beta-qlassroom.qntmnet.com/.env
+              subPath: .env
+          ports:
+            - containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+      volumes:
+        - name: laravel-env
+          secret:
+            secretName: laravel-env-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-service
+  namespace: laravel-app
+spec:
+  selector:
+    app: laravel-app
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
